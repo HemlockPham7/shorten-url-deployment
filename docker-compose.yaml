@@ -18,21 +18,21 @@ services:
       - ./postgres/init-db:/docker-entrypoint-initdb.d
       - ./postgres_data:/var/lib/postgresql/data:Z
 
-#  bookmark-service:
-#    image: hemlockpham/bookmark-service:latest
-#    restart: always
-#    container_name: bookmark-service
-#    depends_on:
-#      - redis
-#      - postgres
-#    ports:
-#      - "8081:8080"
-#    env_file:
-#      - ./bookmark-service/.env
-#    volumes:
-#      - ./public.pem:/app/public.pem
-#      - ./private.pem:/app/private.pem
-#
+  bookmark-service:
+    image: hemlockpham/bookmark-service:latest
+    restart: always
+    container_name: bookmark-service
+    depends_on:
+      - redis
+      - postgres
+    ports:
+      - "8081:8080"
+    env_file:
+      - ./bookmark-service/.env
+    volumes:
+      - ./public.pem:/app/public.pem
+      - ./private.pem:/app/private.pem
+
 #  worker-service:
 #    image: hemlockpham/worker-service:latest
 #    restart: always
