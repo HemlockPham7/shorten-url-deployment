@@ -1,2 +1,2 @@
 CREATE DATABASE "user";
-CREATE DATABASE "bookmark";
+-- CREATE DATABASE "bookmark";

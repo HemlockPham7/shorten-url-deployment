@@ -5,4 +5,8 @@ generate-rsa-key:
 deploy:
 	docker-compose up -d
 
+remove-database:
+	docker compose down -v
+	sudo rm -rf ./postgres_data
+
 full-deploy: generate-rsa-key deploy
