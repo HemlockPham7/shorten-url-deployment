@@ -33,15 +33,15 @@ services:
       - ./public.pem:/app/public.pem
       - ./private.pem:/app/private.pem
 
-#  worker-service:
-#    image: hemlockpham/worker-service:latest
-#    restart: always
-#    container_name: worker-service
-#    depends_on:
-#      - redis
-#      - postgres
-#    env_file:
-#      - ./worker-service/.env
+  worker-service:
+    image: hemlockpham/worker-service:latest
+    restart: always
+    container_name: worker-service
+    depends_on:
+      - redis
+      - postgres
+    env_file:
+      - ./worker-service/.env
 
   user-service:
     image: hemlockpham/user-service:latest
