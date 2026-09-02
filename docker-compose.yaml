@@ -4,6 +4,8 @@ services:
   redis:
     image: redis:alpine
     container_name: redis
+    networks:
+      - shorten-url-app
 
   postgres:
     image: postgres:17
@@ -13,6 +15,8 @@ services:
     volumes:
       - ./postgres/init-db:/docker-entrypoint-initdb.d
       - ./postgres_data:/var/lib/postgresql/data:Z
+    networks:
+      - shorten-url-app
 
   bookmark-service:
     image: hemlockpham/bookmark-service:latest
@@ -26,6 +30,8 @@ services:
     volumes:
       - ./public.pem:/app/public.pem
       - ./private.pem:/app/private.pem
+    networks:
+      - shorten-url-app
 
   worker-service:
     image: hemlockpham/worker-service:latest
@@ -36,6 +42,8 @@ services:
       - postgres
     env_file:
       - ./worker-service/.env
+    networks:
+      - shorten-url-app
 
   user-service:
     image: hemlockpham/user-service:latest
@@ -49,6 +57,15 @@ services:
     volumes:
       - ./public.pem:/app/public.pem
       - ./private.pem:/app/private.pem
+    networks:
+      - shorten-url-app
+
+  portal:
+    image: hemlockpham/shorten-url-portal:latest
+    container_name: portal
+    restart: always
+    networks:
+      - shorten-url-app
 
   nginx:
     image: nginx:alpine
@@ -62,7 +79,10 @@ services:
       - bookmark-service
       - user-service
       - worker-service
+      - portal
+    networks:
+      - shorten-url-app
 
 networks:
-  default:
-    name: bookmark_management_network
+  shorten-url-app:
+    driver: bridge
