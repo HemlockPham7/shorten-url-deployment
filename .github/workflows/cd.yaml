@@ -1,0 +1,72 @@
+name: cd-manual-deployment-pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: "Service to deploy"
+        required: true
+        type: choice
+        options:
+          - bookmark-service
+          - user-service
+          - worker-service
+          - portal
+          - redis
+          - postgres
+          - all
+
+jobs:
+  cd_pipeline:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Create .env files
+        run: |
+          mkdir -p ./bookmark-service
+          printf '%s\n' "$BOOKMARK_SERVICE_ENV" > ./bookmark-service/.env
+
+          mkdir -p ./user-service
+          printf '%s\n' "$USER_SERVICE_ENV" > ./user-service/.env
+
+          mkdir -p ./worker-service
+          printf '%s\n' "$WORKER_SERVICE_ENV" > ./worker-service/.env
+
+          mkdir -p ./postgres
+          printf '%s\n' "$POSTGRES_ENV" > ./postgres/.env
+
+          printf '%s\n' "$PRIVATE_KEY" > ./private.pem
+          printf '%s\n' "$PUBLIC_KEY" > ./public.pem
+        env:
+          BOOKMARK_SERVICE_ENV: ${{ secrets.BOOKMARK_SERVICE_ENV }}
+          USER_SERVICE_ENV: ${{ secrets.USER_SERVICE_ENV }}
+          WORKER_SERVICE_ENV: ${{ secrets.WORKER_SERVICE_ENV }}
+          POSTGRES_ENV: ${{ secrets.POSTGRES_ENV }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          PUBLIC_KEY: ${{ secrets.PUBLIC_KEY }}
+
+      - name: login to docker
+        working-directory: .
+        run: make docker-login
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Deploy Application
+        working-directory: .
+        run: |
+          echo "Deploying $SERVICE..."
+
+          if [ "$SERVICE" = "all" ]; then
+            docker compose pull
+            docker compose down --remove-orphans
+            docker compose up -d
+            docker system prune -f
+          else
+            docker compose pull "$SERVICE"
+            docker compose up -d "$SERVICE"
+          fi
+        env:
+          SERVICE: ${{ inputs.service }}

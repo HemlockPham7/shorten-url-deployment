@@ -1,0 +1,29 @@
+name: cd-listen-deployment-pipeline
+
+on:
+  repository_dispatch:
+    types: [deploy]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: login to docker
+        working-directory: .
+        run: make docker-login
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Deploy service
+        working-directory: .
+        run: |
+          echo "Deploying $SERVICE..."
+
+          docker compose pull "$SERVICE"
+          docker compose up -d "$SERVICE"
+        env:
+          SERVICE: ${{ github.event.client_payload.service }}
