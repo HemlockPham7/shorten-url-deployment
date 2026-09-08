@@ -1,7 +1,14 @@
 # shorten-url-deployment
 
-Docker Compose deployment configuration for the Bookmark Management system, a full-stack application built with Clean Architecture. 
-It provides URL shortening, bookmark management, and user authentication via a microservice architecture.
+Deployment and infrastructure configuration for the Shorten URL platform.
+
+This repository provides the Docker Compose setup, Nginx reverse proxy, environment configuration, database initialization, and CI/CD workflows required to deploy and run the complete Shorten URL system.
+
+The platform consists of a React frontend, authentication and user management service, bookmark and URL shortening service, background worker, PostgreSQL, Redis, and Nginx. All services are connected through a shared Docker network, while Nginx acts as the single public entry point and routes incoming requests to the appropriate service.
+
+## Demo
+
+[![Shorten URL Demo](asset/demo/shorten-url-thumbnail.png)](https://youtu.be/979ioAqtwKA)
 
 ## Architecture 
 
@@ -56,6 +63,34 @@ It provides URL shortening, bookmark management, and user authentication via a m
                   └────────────────────────────────────────────┘
 ```
 
+---
+
+## Services
+
+| Service            | Image                                      | Port (internal) | Description                          | Reference                                                            |
+|--------------------|--------------------------------------------|-----------------|--------------------------------------|----------------------------------------------------------------------|
+| `nginx`            | `nginx:alpine`                             | 80 (exposed)    | Reverse proxy, single entry point    |                                                                      |
+| `portal`           | `hemlockpham/shorten-url-portal:latest`    | 3000            | Frontend SPA                         | [Portal](https://github.com/HemlockPham7/shorten-url-frontend)       |
+| `user-service`     | `hemlockpham/user-service:latest`          | 8080            | Auth & user management               | [User service](https://github.com/HemlockPham7/user-service)         |
+| `bookmark-service` | `hemlockpham/bookmark-service:latest`      | 8080            | Bookmark & URL shortener             | [Bookmark service](https://github.com/HemlockPham7/bookmark-service) |
+| `worker-service`   | `hemlockpham/worker-service:latest`        | —               | Background import worker             | [Worker service](https://github.com/HemlockPham7/worker-service)     |
+| `postgres`         | `postgres:17`                              | 5432            | Persistent storage (2 databases)     |                                                                      |
+| `redis`            | `redis:alpine`                             | 6379            | Short URL cache & import queue       |                                                                      |
+
+---
+
+## Test Coverage
+
+The following table shows the unit test coverage of each service in the Shorten URL platform.
+
+| Service          | Unit Test Coverage |
+|------------------|--------------------|
+| user-service     | 98.1%              |
+| bookmark-service | 93.4%              |
+| worker-service   | 96.7%              |
+| common-libs      | 93.1%              |
+| overall          | 95.3%              |
+
 
 ---
 
@@ -85,20 +120,6 @@ shorten-url-deployment/
 
 ---
 
-## Services
-
-| Service            | Image                                      | Port (internal) | Description                          |
-|--------------------|--------------------------------------------|-----------------|--------------------------------------|
-| `nginx`            | `nginx:alpine`                             | 80 (exposed)    | Reverse proxy, single entry point    |
-| `portal`           | `hemlockpham/shorten-url-portal:latest`    | 3000            | Frontend SPA                         |
-| `user-service`     | `hemlockpham/user-service:latest`          | 8080            | Auth & user management               |
-| `bookmark-service` | `hemlockpham/bookmark-service:latest`      | 8080            | Bookmark & URL shortener             |
-| `worker-service`   | `hemlockpham/worker-service:latest`        | —               | Background import worker             |
-| `postgres`         | `postgres:17`                              | 5432            | Persistent storage (2 databases)     |
-| `redis`            | `redis:alpine`                             | 6379            | Short URL cache & import queue       |
-
----
-
 ## Routing (nginx)
 
 | Path pattern              | Upstream           |
@@ -121,15 +142,67 @@ Rate limiting is configured (`1000 req/min` per user) on API routes and can be e
 
 ### 1. Set up bookmark service environment variables
 
-- [Bookmark Service Environment Setup](https://github.com/HemlockPham7/bookmark-service)
+| Variable                 | Default          | Description                                              |
+|--------------------------|------------------|----------------------------------------------------------|
+| `PREFIXENV_REDIS_ADDR`   | redis:6379       | Redis server address used by the service.                |
+| `PREFIXENV_DB_HOST`      | postgres         | PostgreSQL database host.                                |
+| `PREFIXENV_DB_PORT`      | 5432             | PostgreSQL database port.                                |
+| `PREFIXENV_DB_USER`      | admin            | PostgreSQL database username.                            |
+| `PREFIXENV_DB_PASSWORD`  | admin            | PostgreSQL database password.                            |
+| `PREFIXENV_DB_NAME`      | bookmark         | PostgreSQL database name.                                |
+| `PREFIXENV_NR_APP_NAME`  | bookmark-service | New Relic application name.                              |
+| `PREFIXENV_NR_LICENSE`   |                  | New Relic license key.                                   |
+| `PREFIXENV_NR_USER`      |                  | New Relic user or account identifier.                    |
+| `POSTGRES_USER`          | admin            | PostgreSQL username used by the database container.      |
+| `POSTGRES_PASSWORD`      | admin            | PostgreSQL password used by the database container.      |
+| `POSTGRES_DB`            | bookmark         | PostgreSQL database name used by the database container. |
+| `TZ`                     | Asia/Ho_Chi_Minh | Application timezone.                                    |
+| `PREFIXENV_APP_PORT`     | 8080             | HTTP port on which the application listens.              |
+| `PREFIXENV_LOG_LEVEL`    | info             | Global logging level.                                    |
+| `PREFIXENV_BASE_PATH`    | /                | Base path for the application's HTTP routes.             |
+| `PREFIXENV_SERVICE_NAME` | bookmark-service | Name used to identify the service.                       |
+| `PREFIXENV_INSTANCE_ID`  |                  | Unique identifier for the service instance.              |
 
 ### 2. Set up user service environment variables
 
-- [User Service Environment Setup](https://github.com/HemlockPham7/user-service)
+| Variable                 | Default          | Description                                              |
+|--------------------------|------------------|----------------------------------------------------------|
+| `PREFIXENV_REDIS_ADDR`   | redis:6379       | Redis server address used by the service.                |
+| `PREFIXENV_DB_HOST`      | postgres         | PostgreSQL database host.                                |
+| `PREFIXENV_DB_PORT`      | 5432             | PostgreSQL database port.                                |
+| `PREFIXENV_DB_USER`      | admin            | PostgreSQL database username.                            |
+| `PREFIXENV_DB_PASSWORD`  | admin            | PostgreSQL database password.                            |
+| `PREFIXENV_DB_NAME`      | user             | PostgreSQL database name.                                |
+| `PREFIXENV_NR_APP_NAME`  | user-service     | New Relic application name.                              |
+| `PREFIXENV_NR_LICENSE`   |                  | New Relic license key.                                   |
+| `PREFIXENV_NR_USER`      |                  | New Relic user or account identifier.                    |
+| `POSTGRES_USER`          | admin            | PostgreSQL username used by the database container.      |
+| `POSTGRES_PASSWORD`      | admin            | PostgreSQL password used by the database container.      |
+| `POSTGRES_DB`            | user             | PostgreSQL database name used by the database container. |
+| `TZ`                     | Asia/Ho_Chi_Minh | Application timezone.                                    |
+| `PREFIXENV_APP_PORT`     | 8080             | HTTP port on which the application listens.              |
+| `PREFIXENV_LOG_LEVEL`    | info             | Global logging level.                                    |
+| `PREFIXENV_BASE_PATH`    | /                | Base path for the application's HTTP routes.             |
+| `PREFIXENV_SERVICE_NAME` | user-service     | Name used to identify the service.                       |
+| `PREFIXENV_INSTANCE_ID`  |                  | Unique identifier for the service instance.              |
 
 ### 3. Set up worker service environment variables
 
-- [Worker Service Environment Setup](https://github.com/HemlockPham7/worker-service)
+| Variable                 | Default         | Description                                              |
+|--------------------------|-----------------|----------------------------------------------------------|
+| `PREFIXENV_REDIS_ADDR`   | redis:6379      | Redis server address used by the service.                |
+| `PREFIXENV_DB_HOST`      | postgres        | PostgreSQL database host.                                |
+| `PREFIXENV_DB_PORT`      | 5432            | PostgreSQL database port.                                |
+| `PREFIXENV_DB_USER`      | admin           | PostgreSQL database username.                            |
+| `PREFIXENV_DB_PASSWORD`  | admin           | PostgreSQL database password.                            |
+| `PREFIXENV_DB_NAME`      | bookmark        | PostgreSQL database name.                                |
+| `PREFIXENV_NR_APP_NAME`  | worker-service  | New Relic application name.                              |
+| `PREFIXENV_NR_LICENSE`   |                 | New Relic license key.                                   |
+| `PREFIXENV_NR_USER`      |                 | New Relic user or account identifier.                    |
+| `PREFIXENV_LOG_LEVEL`    | info            | Global logging level.                                    |
+| `PREFIXENV_SERVICE_NAME` | worker-service  | Name used to identify the service.                       |
+| `PREFIXENV_INSTANCE_ID`  |                 | Unique identifier for the service instance.              |
+| `PREFIXENV_QUEUENAME`    | bookmark-import | Name of the queue.                                       |
 
 ### 4. Set up postgres environment variables
 
