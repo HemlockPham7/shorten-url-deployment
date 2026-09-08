@@ -219,7 +219,7 @@ Rate limiting is configured (`1000 req/min` per user) on API routes and can be e
 docker-compose up redis postgres -d
 ```
 
-### 6. Start service (user-service + bookmark-service)
+### 6. Start service (user-service + bookmark-service + worker-service)
 
 ```bash
 docker-compose up user-service bookmark-service worker-service -d
